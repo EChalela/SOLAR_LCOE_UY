@@ -64,6 +64,48 @@ src/
 - Python ≥ 3.8
 - Librerías: tidyverse, triangle, highcharter, pandas, seaborn, matplotlib
 
+## 🚀 API de simulación
+
+El script `src/scripts/api.R` expone el endpoint `/lcoe` mediante Plumber.
+Para iniciar el servicio es posible definir el puerto y el host mediante
+variables de entorno:
+
+```bash
+export R_API_PORT=8001
+export R_API_HOST=0.0.0.0
+Rscript src/scripts/api.R
+```
+
+La API quedará disponible en `http://$R_API_HOST:$R_API_PORT/lcoe` y
+retorna el LCOE calculado junto con la ruta del archivo generado.
+
+### Ejemplo de integración con Python
+
+Un cliente sencillo puede invocar el endpoint usando la librería
+`requests`:
+
+```python
+import requests
+
+payload = {
+    "data_dir": "/ruta/datos",
+    "input_file": "archivo.csv",
+    "capital_cost": 3000,
+    "operating_cost": 50,
+    "energy_production": 5000,
+    "discount_rate": 5,
+    "lifetime": 20,
+    "projection_date": "2045-12-31"
+}
+
+r = requests.post("http://localhost:8001/lcoe", json=payload)
+print(r.json())
+```
+
+También puede ejecutarse el script
+[`examples/call_r_api.py`](examples/call_r_api.py) para realizar la
+petición con parámetros de ejemplo.
+
 ---
 
 ## ✍️ Autores
