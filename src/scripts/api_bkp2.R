@@ -38,7 +38,9 @@ function(data_dir,
          discount_rate,
          lifetime,
          projection_date) {
-  if(!isNull(data_dir)){setwd(data_dir)} else {list(error = "El directorio de datos está vacío. Debe agregarlo como parámetro.")}
+  if (is.null(data_dir) || data_dir == "") {
+    return(list(error = "El directorio de datos está vacío. Debe agregarlo como parámetro."))
+  }
   # Convertir parámetros numéricos
   capital_cost <- as.numeric(capital_cost)
   operating_cost <- as.numeric(operating_cost)
@@ -67,8 +69,7 @@ function(data_dir,
     return(list(error = "Todos los parámetros deben ser valores numéricos válidos"))
   }
   
-  # Establecer el directorio de trabajo
-  setwd(data_dir)
+
   
   # Construir la ruta del archivo de entrada
   csv_file <- file.path(data_dir, input_file)
@@ -143,7 +144,6 @@ function(data_dir,
   lcoe <- (capital_cost + operating_cost * sum(1 / ((1 + discount_rate)^(1:lifetime)))) /
     (energy_production * sum(1 / ((1 + discount_rate)^(1:lifetime))))
   
-  setwd("/Users/echalela/RStudioProjects/Simulaciones-R")
   # Retornar mensaje de éxito con la ruta del archivo generado, el tiempo de ejecución y el LCOE calculado
   return(
     list(
@@ -155,7 +155,8 @@ function(data_dir,
   )
 }
 
-setwd("/Users/echalela/RStudioProjects/Simulaciones-R")
-# Iniciar API de plumber
+# Iniciar API de plumber con configuración de entorno
+port <- as.numeric(Sys.getenv("R_API_PORT", "8001"))
+host <- Sys.getenv("R_API_HOST", "0.0.0.0")
 r <- plumber::plumb("api.R")  # No se necesita la ruta absoluta
-r$run(port = 8001, host = "0.0.0.0")
+r$run(port = port, host = host)

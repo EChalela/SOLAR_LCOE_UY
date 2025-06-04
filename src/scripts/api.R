@@ -24,7 +24,6 @@ function(data_dir, input_file, capital_cost, operating_cost, energy_production, 
     if (is.null(data_dir) || data_dir == "") {
       stop("El directorio de datos está vacío. Debe agregarlo como parámetro.")
     }
-    setwd(data_dir)
 
     # Convertir parámetros a numéricos
     capital_cost <- as.numeric(capital_cost)
@@ -114,8 +113,8 @@ function(data_dir, input_file, capital_cost, operating_cost, energy_production, 
   })
 }
 
-setwd('/Users/echalela/RStudioProjects/Simulaciones-R/')
-
-# Iniciar API de plumber
+# Iniciar API de plumber con configuración de entorno
+port <- as.numeric(Sys.getenv("R_API_PORT", "8001"))
+host <- Sys.getenv("R_API_HOST", "0.0.0.0")
 r <- plumber::plumb("api.R")
-r$run(port = 8001, host = "0.0.0.0")
+r$run(port = port, host = host)
