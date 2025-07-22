@@ -1,0 +1,218 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "API LCOE Flask",
+    "description": "Documentación de la API para cálculo de LCOE y obtención de datos climáticos.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Servidor local"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Carga la página principal.",
+        "description": "Renderiza el archivo index.html desde la carpeta de templates.",
+        "responses": {
+          "200": {
+            "description": "Página HTML cargada correctamente.",
+            "content": {
+              "text/html": {}
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "summary": "Verifica el estado de la API.",
+        "description": "Devuelve un mensaje indicando que la API está funcionando correctamente.",
+        "responses": {
+          "200": {
+            "description": "Respuesta exitosa con mensaje de estado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/procesar": {
+      "post": {
+        "summary": "Procesa los datos recibidos y calcula el LCOE.",
+        "description": "Recibe parámetros, genera el CSV climático si no existe y llama a la API de R para calcular el LCOE.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" },
+                  "projection_date": { "type": "string" },
+                  "capital_cost": { "type": "number" },
+                  "operating_cost": { "type": "number" },
+                  "energy_production": { "type": "number" },
+                  "discount_rate": { "type": "number" },
+                  "lifetime": { "type": "integer" }
+                },
+                "required": [
+                  "latitude", "longitude", "projection_date",
+                  "capital_cost", "operating_cost", "energy_production",
+                  "discount_rate", "lifetime"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado del cálculo LCOE.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error por parámetros faltantes.",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Error interno.",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/calcular_lcoe": {
+      "post": {
+        "summary": "Calcula el LCOE y genera una imagen de la proyección.",
+        "description": "Calcula el LCOE promedio y guarda una gráfica en la carpeta images, devolviendo la URL de la imagen.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "capital_cost": { "type": "number" },
+                  "operating_cost": { "type": "number" },
+                  "energy_production": { "type": "number" },
+                  "lifetime": { "type": "integer" },
+                  "image_name": { "type": "string" }
+                },
+                "required": [
+                  "capital_cost", "operating_cost", "energy_production", "lifetime"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "LCOE calculado y URL de la imagen generada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "LCOE": { "type": "number" },
+                    "image_url": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/images/{filename}": {
+      "get": {
+        "summary": "Devuelve una imagen generada.",
+        "description": "Sirve imágenes desde la carpeta images.",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Imagen servida correctamente.",
+            "content": {
+              "image/png": {},
+              "image/jpeg": {}
+            }
+          }
+        }
+      }
+    },
+    "/obtener_datos_climaticos": {
+      "post": {
+        "summary": "Obtiene datos climáticos por latitud y longitud.",
+        "description": "Recibe latitud y longitud y obtiene datos climáticos desde OpenMeteo, generando un archivo CSV.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" }
+                },
+                "required": ["latitude", "longitude"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Datos climáticos obtenidos y archivo CSV generado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "csv_file": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros faltantes.",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Error en la conexión con OpenMeteo.",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}

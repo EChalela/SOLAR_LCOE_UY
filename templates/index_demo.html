@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Demo LCOE</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map { height: 300px; width: 100%; margin-bottom: 20px; }
+        #lcoe-img { display:none; max-width:400px; margin-top:20px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <button id="calcular-btn">Calcular LCOE</button>
+    <img id="lcoe-img" src="" alt="Gráfica LCOE" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        let lat = null, lon = null;
+        const map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let marker = null;
+        map.on('click', function(e) {
+            lat = e.latlng.lat;
+            lon = e.latlng.lng;
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([lat, lon]).addTo(map);
+        });
+        document.getElementById('calcular-btn').onclick = function(event) {
+            event.preventDefault();
+            if (lat === null || lon === null) {
+                alert('Selecciona una ubicación en el mapa.');
+                return;
+            }
+            const img = document.getElementById('lcoe-img');
+            img.src = '/images/lcoe_energia.png'; // Se setea para demo.
+            img.style.display = 'block';
+        };
+    </script>
+</body>
+</html>

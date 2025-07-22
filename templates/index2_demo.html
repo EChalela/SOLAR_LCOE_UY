@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<!-- This template uses Leaflet for the map and includes a form for LCOE calculations -->
+<!-- It also includes a button to fetch weather data based on selected coordinates -->
+<!-- The page is styled with basic CSS for layout and aesthetics -->
+<!-- The form fields are designed to accept necessary parameters for LCOE calculations -->
+<!-- The map allows users to select coordinates interactively -->
+<!-- The page is responsive and designed to work well on different devices -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Web de Cálculo de LCOE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        main {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .form-container {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .map-container {
+            height: 500px;
+            width: 100%;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .readonly-field, input[type="number"], input[type="date"] {
+            width: calc(100% - 20px);
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            margin-top: 20px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body>
+<header>
+    <h1>API Web de Cálculo de LCOE</h1>
+</header>
+<main>
+    <div class="container">
+        <h2>Mapa Interactivo y Calculadora Energética</h2>
+        <div id="map" class="map-container"></div>
+        <button id="select-coordinates">Seleccionar Coordenadas</button>
+        <!-- Switch para habilitar edición manual -->
+        <label style="margin-top:10px;">
+            <input type="checkbox" id="toggleManualCoords">
+            Habilitar edición manual de coordenadas
+        </label>
+        <div class="inputs">
+            <label for="latitude">Latitud:</label>
+            <input type="number" id="latitude" class="readonly-field" step="any" disabled value="-">
+            <label for="longitude">Longitud:</label>
+            <input type="number" id="longitude" class="readonly-field" step="any" disabled value="-">
+            <!-- En los formularios, reemplaza los inputs de fecha -->
+            <label for="year">Fecha de proyección:</label>
+            <input id="year" required>
+            ...
+            <label for="projection-date">Fecha de Proyección:</label>
+            <input id="projection-date" required>
+        </div>
+        <button id="fetch-weather">Obtener Datos Climáticos</button>
+        <p id="weather-status"></p>
+    </div>
+    <div class="form-container">
+        <h3>Parámetros de LCOE</h3>
+        <label for="capital-cost">Costo de Capital (US$/kW):</label>
+        <input type="number" id="capital-cost" placeholder="Ingrese costo de capital">
+
+        <label for="operating-cost">Costo Operativo (US$/kW/año):</label>
+        <input type="number" id="operating-cost" placeholder="Ingrese costo operativo">
+
+        <label for="energy-production">Energía Producida (kWh/año):</label>
+        <input type="number" id="energy-production" placeholder="Ingrese energía producida">
+
+        <label for="discount-rate">Tasa de Descuento (%):</label>
+        <input type="number" id="discount-rate" placeholder="Ingrese la tasa de descuento" step="0.01">
+
+        <label for="lifetime">Tiempo de vida útil (años):</label>
+        <input type="number" id="lifetime" placeholder="Ingrese el tiempo de vida útil">
+
+        <label for="projection-date">Fecha de Proyección:</label>
+        <input type="date" id="projection-date" min="2025-01-01" max="2075-12-31" required>
+
+        <button id="calculate-lcoe">Calcular LCOE</button>
+        <div id="lcoe-result" style="margin-top:20px;"></div>
+    </div>
+</main>
+<footer>
+    <p>&copy; 2025 Energy Efficiency Learning. Todos los derechos reservados.</p>
+</footer>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+    flatpickr("#year", {
+        dateFormat: "Y-m-d",
+        minDate: "2025-01-01",
+        maxDate: "2075-12-31",
+        defaultDate: "2025-01-01",
+        allowInput: true
+    });
+    flatpickr("#projection-date", {
+        dateFormat: "Y-m-d",
+        minDate: "2025-01-01",
+        maxDate: "2075-12-31",
+        defaultDate: "2025-01-01",
+        allowInput: true
+    });
+});
+document.getElementById("calculate-lcoe").addEventListener("click", function(event) {
+    event.preventDefault();
+    const img = document.getElementById("lcoe-img");
+    img.src = "app/images/lcoe_energia.png";
+    img.style.display = "block";
+});
+// Sincronizar fechas entre formularios
+document.addEventListener("DOMContentLoaded", function () {
+    const previousProjectionDate = document.getElementById("year");
+    const projectionDateField = document.getElementById("projection-date");
+    if (previousProjectionDate && projectionDateField) {
+        previousProjectionDate.addEventListener("change", function () {
+            projectionDateField.value = previousProjectionDate.value;
+        });
+        projectionDateField.value = previousProjectionDate.value || "2025-01-01";
+    }
+});
+
+// Leaflet y selección de coordenadas
+document.addEventListener('DOMContentLoaded', function () {
+    const map = L.map('map').setView([-33, -56], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let clickEnabled = false;
+    document.getElementById("select-coordinates").addEventListener("click", function () {
+        alert("Haga clic en el mapa para seleccionar coordenadas.");
+        clickEnabled = true;
+    });
+
+    map.on('click', function (e) {
+        if (clickEnabled) {
+            document.getElementById("latitude").value = e.latlng.lat.toFixed(6);
+            document.getElementById("longitude").value = e.latlng.lng.toFixed(6);
+            clickEnabled = false;
+        }
+    });
+
+    // Habilitar edición manual de coordenadas
+    document.getElementById("toggleManualCoords").addEventListener("change", function() {
+        const latInput = document.getElementById("latitude");
+        const lonInput = document.getElementById("longitude");
+        if (this.checked) {
+            latInput.disabled = false;
+            lonInput.disabled = false;
+        } else {
+            latInput.disabled = true;
+            lonInput.disabled = true;
+        }
+    });
+
+    // Obtener datos climáticos
+    document.getElementById("fetch-weather").addEventListener("click", function() {
+        const latitude = document.getElementById("latitude").value.trim();
+        const longitude = document.getElementById("longitude").value.trim();
+
+        if (!latitude || !longitude || latitude === "-" || longitude === "-") {
+            alert("Por favor, seleccione las coordenadas antes de obtener datos climáticos.");
+            return;
+        }
+
+        const requestData = { latitude: parseFloat(latitude), longitude: parseFloat(longitude) };
+
+        fetch("http://127.0.0.1:5000/obtener_datos_climaticos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert("Error: " + data.error);
+            } else {
+                alert("Datos climáticos obtenidos con éxito.");
+            }
+        })
+        .catch(error => {
+            alert("Error al obtener datos climáticos.");
+            console.error("Error:", error);
+        });
+    });
+});
+
+    // Obtener la fecha de proyección del formulario anterior
+    document.addEventListener("DOMContentLoaded", function () {
+        const previousProjectionDate = document.getElementById("year");
+        const projectionDateField = document.getElementById("projection-date");
+
+        // Sincronizar el campo de fecha de proyección en ambos formularios
+        if (previousProjectionDate && projectionDateField) {
+            previousProjectionDate.addEventListener("change", function () {
+                projectionDateField.value = previousProjectionDate.value;
+            });
+
+            // Inicializar el valor si ya está seleccionado
+            projectionDateField.value = previousProjectionDate.value || "2025-01-01";
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const map = L.map('map').setView([-33, -56], 7);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let clickEnabled = false;
+        document.getElementById("select-coordinates").addEventListener("click", function () {
+            alert("Haga clic en el mapa para seleccionar coordenadas.");
+            clickEnabled = true;
+        });
+
+        map.on('click', function (e) {
+            if (clickEnabled) {
+                document.getElementById("latitude").textContent = e.latlng.lat.toFixed(6);
+                document.getElementById("longitude").textContent = e.latlng.lng.toFixed(6);
+                clickEnabled = false;
+            }
+        });
+        document.getElementById("fetch-weather").addEventListener("click", function() {
+    const latitude = document.getElementById("latitude").textContent.trim();
+    const longitude = document.getElementById("longitude").textContent.trim();
+
+    if (!latitude || !longitude || latitude === "-" || longitude === "-") {
+        alert("Por favor, seleccione las coordenadas antes de obtener datos climáticos.");
+        return;
+    }
+
+    const requestData = { latitude: parseFloat(latitude), longitude: parseFloat(longitude) };
+
+    fetch("http://127.0.0.1:5000/obtener_datos_climaticos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert("Error: " + data.error);
+        } else {
+            alert("Datos climáticos obtenidos con éxito.");
+        }
+    })
+    .catch(error => {
+        alert("Error al obtener datos climáticos.");
+        console.error("Error:", error);
+    });
+});
+    });
+</script>
+</body>
+</html>
