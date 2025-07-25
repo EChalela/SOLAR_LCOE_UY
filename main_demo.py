@@ -1,7 +1,5 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory, current_app
-import requests
 from flasgger import Swagger
-import matplotlib.pyplot as plt
 import os
 from app.generar_csv_climatico import generar_csv
 from app.calcular_proyeccion_lcoe import calcular_lcoe_r
