@@ -1,7 +1,8 @@
 
 # Simulación y Evaluación Económica de Energía Solar en Uruguay
 
-Este proyecto evalúa la viabilidad económica de la energía solar fotovoltaica en Uruguay, mediante el análisis de datos climáticos, simulaciones de producción y estimaciones del Costo Nivelado de Energía (LCOE).
+Este proyecto evalúa la viabilidad económica de la energía solar fotovoltaica en Uruguay, mediante el análisis de datos climáticos, simulaciones de producción y estimaciones del Costo Nivelado de Energía (LCOE). [Ver documento TFM](docs/TFM_EES.pdf)
+
 
 ---
 
