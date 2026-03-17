@@ -38,7 +38,11 @@ function(data_dir,
          discount_rate,
          lifetime,
          projection_date) {
-  if(!isNull(data_dir)){setwd(data_dir)} else {list(error = "El directorio de datos está vacío. Debe agregarlo como parámetro.")}
+  if (!is.null(data_dir)) {
+    setwd(data_dir)
+  } else {
+    return(list(error = "El directorio de datos está vacío. Debe agregarlo como parámetro."))
+  }
   # Convertir parámetros numéricos
   capital_cost <- as.numeric(capital_cost)
   operating_cost <- as.numeric(operating_cost)
